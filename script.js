@@ -104,6 +104,8 @@ function bindUI() {
             applyDateSheetSelection();
         }
     });
+    $("display-name-toggle")?.addEventListener("click", toggleDisplayNameMenu);
+    $("display-name-menu")?.addEventListener("click", handleDisplayNameMenuClick);
     $("media-modal-close")?.addEventListener("click", closeMediaModal);
     $("media-modal-backdrop")?.addEventListener("click", closeMediaModal);
     $("media-modal-body")?.addEventListener("click", handleMediaModalClick);
@@ -263,6 +265,53 @@ function syncSelectedDisplayName(event) {
     state.myName = event.target.value.trim();
 }
 
+function toggleDisplayNameMenu() {
+    const menu = $("display-name-menu");
+    if (!menu) return;
+
+    if (menu.hidden) {
+        openDisplayNameMenu();
+    } else {
+        closeDisplayNameMenu();
+    }
+}
+
+function openDisplayNameMenu() {
+    const menu = $("display-name-menu");
+    const toggle = $("display-name-toggle");
+    const input = $("display-name");
+    if (!menu) return;
+
+    menu.hidden = false;
+    toggle?.setAttribute("aria-expanded", "true");
+    input?.setAttribute("aria-expanded", "true");
+}
+
+function closeDisplayNameMenu() {
+    const menu = $("display-name-menu");
+    const toggle = $("display-name-toggle");
+    const input = $("display-name");
+    if (!menu) return;
+
+    menu.hidden = true;
+    toggle?.setAttribute("aria-expanded", "false");
+    input?.setAttribute("aria-expanded", "false");
+}
+
+function handleDisplayNameMenuClick(event) {
+    const option = event.target.closest("[data-display-name]");
+    if (!option) return;
+
+    const selectedName = option.dataset.displayName || "";
+    const nameInput = $("display-name");
+    if (nameInput) {
+        nameInput.value = selectedName;
+        state.myName = selectedName.trim();
+        nameInput.focus();
+    }
+    closeDisplayNameMenu();
+}
+
 async function initViewer() {
     if (state.isLoading) return;
 
@@ -403,13 +452,13 @@ function resetChatState() {
 }
 
 async function preloadDisplayNameOptions(file) {
-    updateDisplayNameOptions([], "Reading sender names from chat export...");
+    updateDisplayNameOptions([], "既可以通过上传文件后选择，也可以手动输入。");
 
     try {
         const rawText = await loadChatTextPreview(file);
         const senders = extractSenderCandidates(rawText);
         state.senderCandidates = senders;
-        updateDisplayNameOptions(senders, senders.length ? `Detected ${senders.length} sender name${senders.length === 1 ? "" : "s"}. Choose one from the list.` : "No sender names detected. You can still enter a name manually.");
+        updateDisplayNameOptions(senders, "既可以通过上传文件后选择，也可以手动输入。");
 
         const nameInput = $("display-name");
         if (nameInput && !nameInput.value.trim() && senders.length) {
@@ -419,7 +468,7 @@ async function preloadDisplayNameOptions(file) {
     } catch (error) {
         console.error(error);
         state.senderCandidates = [];
-        updateDisplayNameOptions([], "Could not read sender names automatically. You can still enter a name manually.");
+        updateDisplayNameOptions([], "既可以通过上传文件后选择，也可以手动输入。");
     }
 }
 
@@ -445,11 +494,19 @@ async function loadChatTextPreview(file) {
 
 function updateDisplayNameOptions(options, helpText) {
     const list = $("display-name-options");
+    const menu = $("display-name-menu");
     const help = $("display-name-help");
     if (list) {
         list.innerHTML = options
             .map((name) => `<option value="${escapeAttribute(name)}"></option>`)
             .join("");
+    }
+    if (menu) {
+        menu.innerHTML = options.length
+            ? options
+                .map((name) => `<button class="display-name-option" type="button" role="option" data-display-name="${escapeAttribute(name)}">${escapeHtml(name)}</button>`)
+                .join("")
+            : `<div class="display-name-empty">上传聊天文件后显示可选名称</div>`;
     }
     if (help) {
         help.textContent = helpText;
@@ -1379,6 +1436,13 @@ function handleDocumentClick(event) {
     if (menu?.classList.contains("show") && !menu.contains(event.target) && !menuToggle?.contains(event.target)) {
         closeMenu();
     }
+
+    const nameMenu = $("display-name-menu");
+    const nameToggle = $("display-name-toggle");
+    const nameInput = $("display-name");
+    if (nameMenu && !nameMenu.hidden && !nameMenu.contains(event.target) && !nameToggle?.contains(event.target) && !nameInput?.contains(event.target)) {
+        closeDisplayNameMenu();
+    }
 }
 
 function handleGlobalKeydown(event) {
@@ -1391,6 +1455,7 @@ function handleGlobalKeydown(event) {
             closeDateSheet();
             return;
         }
+        closeDisplayNameMenu();
         closeMenu();
         document.querySelectorAll(".drawer.open").forEach((drawer) => drawer.classList.remove("open"));
     }
@@ -1542,6 +1607,7 @@ function setLoadingState(isLoading, title = "Loading chat", copy = "Parsing your
     const loadButton = $("load-chat");
     const dropTarget = $("drop-target");
     const nameInput = $("display-name");
+    const nameToggle = $("display-name-toggle");
     const fileInput = $("file-input");
 
     if (titleEl) {
@@ -1554,7 +1620,11 @@ function setLoadingState(isLoading, title = "Loading chat", copy = "Parsing your
     loadButton?.toggleAttribute("disabled", isLoading);
     dropTarget?.toggleAttribute("disabled", isLoading);
     nameInput?.toggleAttribute("disabled", isLoading);
+    nameToggle?.toggleAttribute("disabled", isLoading);
     fileInput?.toggleAttribute("disabled", isLoading);
+    if (isLoading) {
+        closeDisplayNameMenu();
+    }
 
     if (!overlay) return;
 

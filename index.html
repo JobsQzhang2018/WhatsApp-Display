@@ -41,9 +41,17 @@
 
                     <div class="input-wrapper">
                         <label for="display-name">显示名称</label>
-                        <input type="text" id="display-name" list="display-name-options" placeholder="上传聊天后自动读取发送者列表" autocomplete="name">
+                        <div class="display-name-picker">
+                            <input type="text" id="display-name" list="display-name-options" placeholder="上传聊天后自动读取发送者列表" autocomplete="name" aria-controls="display-name-menu" aria-expanded="false">
+                            <button class="display-name-toggle" id="display-name-toggle" type="button" aria-label="选择对话人名称" aria-controls="display-name-menu" aria-expanded="false">
+                                <i class="ph ph-caret-down" aria-hidden="true"></i>
+                            </button>
+                            <div class="display-name-menu" id="display-name-menu" role="listbox" hidden>
+                                <div class="display-name-empty">上传聊天文件后显示可选名称</div>
+                            </div>
+                        </div>
                         <datalist id="display-name-options"></datalist>
-                        <div class="input-help" id="display-name-help">上传 `.txt` 或 `.zip` 后，自动识别发送者名称。</div>
+                        <div class="input-help" id="display-name-help">既可以通过上传文件后选择，也可以手动输入。</div>
                     </div>
 
                     <button class="drop-target" id="drop-target" type="button" aria-describedby="drop-help">
