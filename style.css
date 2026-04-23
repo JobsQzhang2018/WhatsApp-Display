@@ -437,6 +437,7 @@ a {
     z-index: 200;
     transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1);
     box-shadow: none;
+    overflow: hidden;
 }
 
 .sidebar-header {
